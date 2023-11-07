@@ -1,0 +1,6 @@
+<h2>新規ルームの作成</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">作成</button>
+</form>

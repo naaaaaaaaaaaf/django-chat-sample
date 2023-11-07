@@ -1,0 +1,19 @@
+<h2>ルーム一覧</h2>
+<table>
+    <thead>
+        <tr>
+            <th>ルーム名</th>
+            <th>作成者</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in object_list %}
+        <tr>
+            <td>{{ item.name }}</td>
+            <td>{{ item.posted_by }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'room.create' %}">ルーム作成</a>
