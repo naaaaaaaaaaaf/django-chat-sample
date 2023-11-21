@@ -1,0 +1,9 @@
+<h2>ルーム詳細</h2>
+<p>ルーム名：{{ room.name }}</p>
+<p>ルーム作成者：{{ room.posted_by.username }}</p>
+<p>ルーム作成日時：{{ room.created_at }}</p>
+
+<h2>メッセージ一覧</h2>
+
+
+<a href="{% url 'room.list' %}">ルーム一覧</a>

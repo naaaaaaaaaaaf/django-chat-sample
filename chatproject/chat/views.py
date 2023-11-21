@@ -19,3 +19,7 @@ class RoomCreateView(LoginRequiredMixin, generic.CreateView):
 class RoomListView(generic.ListView):
     template_name = 'room/list.html'
     model = Room
+
+class RoomDetailView(generic.DeleteView):
+    template_name = 'room/detail.html'
+    model = Room
