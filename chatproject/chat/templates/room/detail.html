@@ -4,6 +4,45 @@
 <p>ルーム作成日時：{{ room.created_at }}</p>
 
 <h2>メッセージ一覧</h2>
+<div id="chat-list">
+{% for message in messages %}
+    <p>{{ message.posted_by.username }}: {{ message.content }}</p>
+{% endfor %}
+</div>
 
-
+<h2>メッセージを送る</h2>
+{% if user.is_authenticated %}
+<input type="text" id="message">
+<button type="submit" id="send">送信</button>
+{% else %}
+<a href="{% url 'login' %}?next={% url 'room.detail' room.id %}">ログインしてメッセージを送る</a>
+{% endif %}
+<br>
 <a href="{% url 'room.list' %}">ルーム一覧</a>
+
+
+
+<script>
+    const url = 'ws://' + window.location.host + '/ws/room/{{room.id}}';
+    const ws = new WebSocket(url);
+    
+    document.getElementById("send").onclick = function sendMessage() {
+        const sendData = {
+            message: document.getElementById('message').value,
+        }
+        ws.send(JSON.stringify(sendData));
+        document.getElementById('message').value = '';
+    }
+
+    ws.onerror = e => {
+        console.log(e);
+    }
+
+    ws.onmessage = e => {
+        const receiveData = JSON.parse(e.data);
+        console.log(receiveData);
+        const p = document.createElement('p');
+        p.textContent = receiveData.user + ': ' + receiveData.message;
+        document.getElementById('chat-list').appendChild(p);
+    }
+</script>

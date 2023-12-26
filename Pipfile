@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 django = "*"
+channels = "*"
+uvicorn = "*"
+websockets = "*"
 
 [dev-packages]
 
