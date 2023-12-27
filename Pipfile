@@ -8,6 +8,7 @@ django = "*"
 channels = "*"
 uvicorn = "*"
 websockets = "*"
+watchfiles = "*"
 
 [dev-packages]
 

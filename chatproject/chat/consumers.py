@@ -18,8 +18,26 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             self.room_id,
             self.channel_name,
         )
+        # 入室ログをブロードキャスト
+        await self.channel_layer.group_send(
+            self.room_id,
+            {
+                "type": "chat_message",
+                "message": f"{self.scope['user']} さんが入室しました。",
+                "user": "system",
+            }
+        )
 
     async def disconnect(self, _close_code):
+
+        await self.channel_layer.group_send(
+            self.room_id,
+            {
+                "type": "chat_message",
+                "message": f"{self.scope['user']} さんが退室しました。",
+                "user": "system",
+            }
+        )
         await self.channel_layer.group_discard(  # グループからチャンネルを削除
             self.room_id,
             self.channel_name,

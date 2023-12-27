@@ -1,37 +1,59 @@
-<h2>ルーム詳細</h2>
-<p>ルーム名：{{ room.name }}</p>
-<p>ルーム作成者：{{ room.posted_by.username }}</p>
-<p>ルーム作成日時：{{ room.created_at }}</p>
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="row mt-3">
+        <div class="col-md-6 offset-md-3">
+            <h2>ルーム情報</h2>
+            <p>ルーム名：{{ room.name }}</p>
+            <p>ルーム作成者：{{ room.posted_by.username }}</p>
+            <p>ルーム作成日時：{{ room.created_at }}</p>
+            <a href="{% url 'room.list' %}">ルーム一覧へ</a>
 
-<h2>メッセージ一覧</h2>
-<div id="chat-list">
-{% for message in messages %}
-    <p>{{ message.posted_by.username }}: {{ message.content }}</p>
-{% endfor %}
+            <div class="card">
+                <div class="card-body">
+                    <div id="chat-list">
+                        {% for message in messages %}
+                            <div class="chat-message {% if message.posted_by == request.user %}right{% else %}left{% endif %}">
+                                {{ message.posted_by.username }}: {{ message.content }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if user.is_authenticated %}
+                        <input type="text" id="message" class="form-control mt-3" placeholder="メッセージを入力...">
+                        <button id="send" class="btn btn-primary mt-3">送信</button>
+                    {% else %}
+                        <a href="{% url 'login' %}?next={% url 'room.detail' room.id %}">ログインしてメッセージを送る</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
-<h2>メッセージを送る</h2>
-{% if user.is_authenticated %}
-<input type="text" id="message">
-<button type="submit" id="send">送信</button>
-{% else %}
-<a href="{% url 'login' %}?next={% url 'room.detail' room.id %}">ログインしてメッセージを送る</a>
-{% endif %}
-<br>
-<a href="{% url 'room.list' %}">ルーム一覧</a>
-
 
 
 <script>
     const url = 'ws://' + window.location.host + '/ws/room/{{room.id}}';
     const ws = new WebSocket(url);
-    
+    const currentUsername = "{{ request.user.username }}";
     document.getElementById("send").onclick = function sendMessage() {
         const sendData = {
             message: document.getElementById('message').value,
         }
         ws.send(JSON.stringify(sendData));
         document.getElementById('message').value = '';
+    }
+    function updateScroll(){
+        const element = document.getElementById("chat-list");
+        element.scrollTop = element.scrollHeight;
+    }
+
+    function addMessage(message, sender) {
+        const messageElement = document.createElement("div");
+        messageElement.classList.add("chat-message");
+        messageElement.classList.add(sender === currentUsername ? "right" : "left");
+        messageElement.textContent = sender + ": " + message;
+        document.getElementById("chat-list").appendChild(messageElement);
+        updateScroll();
     }
 
     ws.onerror = e => {
@@ -41,8 +63,33 @@
     ws.onmessage = e => {
         const receiveData = JSON.parse(e.data);
         console.log(receiveData);
-        const p = document.createElement('p');
-        p.textContent = receiveData.user + ': ' + receiveData.message;
-        document.getElementById('chat-list').appendChild(p);
+        addMessage(receiveData.message, receiveData.user);
     }
 </script>
+<style>
+    #chat-list {
+        height: 400px; /* 適切な高さに設定 */
+        overflow-y: auto; /* スクロールバーを表示 */
+        padding: 10px;
+        background-color: #f8f9fa; /* 背景色 */
+        border: 1px solid #dee2e6; /* ボーダー */
+        border-radius: 5px; /* 角を丸くする */
+        margin-bottom: 10px;
+    }
+    
+    /* メッセージのスタイリング */
+    .chat-message {
+        padding: 5px 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        background-color: #e9ecef; /* メッセージの背景色 */
+    }
+    .chat-message.right {
+        background-color: #d1e7dd;
+    }
+    
+    .chat-message.left {
+        background-color: #f8d7da;
+    }
+</style>
+{% endblock %}
