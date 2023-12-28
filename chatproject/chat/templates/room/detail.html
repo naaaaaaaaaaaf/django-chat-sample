@@ -13,8 +13,10 @@
                 <div class="card-body">
                     <div id="chat-list">
                         {% for message in messages %}
-                            <div class="chat-message {% if message.posted_by == request.user %}right{% else %}left{% endif %}">
+                            <div class="chat-message {% if message.posted_by == request.user %}right{% else %}left{% endif %}"
+                                data-timestamp="{{ message.created_at|date:'Y-m-d H:i:s' }}">
                                 {{ message.posted_by.username }}: {{ message.content }}
+                                <span class="text-muted small timestamp"></span>
                             </div>
                         {% endfor %}
                     </div>
@@ -32,6 +34,8 @@
 
 
 <script>
+    window.onload = convertTimestampsToLocal;
+
     const url = 'ws://' + window.location.host + '/ws/room/{{room.id}}';
     const ws = new WebSocket(url);
     const currentUsername = "{{ request.user.username }}";
@@ -47,11 +51,14 @@
         element.scrollTop = element.scrollHeight;
     }
 
-    function addMessage(message, sender) {
+    function addMessage(message, sender, timestamp) {
         const messageElement = document.createElement("div");
         messageElement.classList.add("chat-message");
         messageElement.classList.add(sender === currentUsername ? "right" : "left");
-        messageElement.textContent = sender + ": " + message;
+
+        const formattedTimestamp = formatTimestamp(timestamp);
+        messageElement.innerHTML = `${sender}: ${message} <span class="text-muted small">(${formattedTimestamp})</span>`;
+
         document.getElementById("chat-list").appendChild(messageElement);
         updateScroll();
     }
@@ -63,8 +70,26 @@
     ws.onmessage = e => {
         const receiveData = JSON.parse(e.data);
         console.log(receiveData);
-        addMessage(receiveData.message, receiveData.user);
+        addMessage(receiveData.message, receiveData.user, receiveData.timestamp);
     }
+
+    function formatTimestamp(utcTimestamp) {
+        const localDate = new Date(utcTimestamp + 'Z');
+        return localDate.toLocaleString();
+    }
+    
+    function convertTimestampsToLocal() {
+        const messages = document.querySelectorAll('.chat-message');
+    
+        messages.forEach(message => {
+            const utcTimestamp = message.getAttribute('data-timestamp');
+            const formattedTimestamp = formatTimestamp(utcTimestamp);
+    
+            const timestampElement = message.querySelector('.timestamp');
+            timestampElement.textContent = `(${formattedTimestamp})`;
+        });
+    }
+    
 </script>
 <style>
     #chat-list {

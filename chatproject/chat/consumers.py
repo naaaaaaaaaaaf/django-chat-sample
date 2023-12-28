@@ -1,5 +1,5 @@
 import json
-
+from datetime import datetime, timezone
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
@@ -18,6 +18,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             self.room_id,
             self.channel_name,
         )
+        current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         # 入室ログをブロードキャスト
         await self.channel_layer.group_send(
             self.room_id,
@@ -25,17 +26,19 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 "type": "chat_message",
                 "message": f"{self.scope['user']} さんが入室しました。",
                 "user": "system",
+                "timestamp": current_time,
             }
         )
 
     async def disconnect(self, _close_code):
-
+        current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         await self.channel_layer.group_send(
             self.room_id,
             {
                 "type": "chat_message",
                 "message": f"{self.scope['user']} さんが退室しました。",
                 "user": "system",
+                "timestamp": current_time,
             }
         )
         await self.channel_layer.group_discard(  # グループからチャンネルを削除
@@ -47,6 +50,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         # メッセージをjson形式で受け取る
         message = data['message']  # 受信データからメッセージを取り出す
         user = self.scope['user'].username
+        current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         await self.createMessage(data)  # メッセージをモデルに保存する
         await self.channel_layer.group_send(  # 指定グループにメッセージを送信する
             self.room_id,
@@ -54,6 +58,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 'type': 'chat_message',
                 'message': message,
                 'user': user,
+                'timestamp': current_time,
             }
         )
 
@@ -61,11 +66,13 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         # グループメッセージを受け取る
         message = event['message']
         user = event['user']
+        current_time = event['timestamp']
         # メッセージを送信する
         await self.send(text_data=json.dumps({
             'type': 'chat_message',
             'message': message,
             'user': user,
+            'timestamp': current_time,
         }))
 
     @database_sync_to_async
